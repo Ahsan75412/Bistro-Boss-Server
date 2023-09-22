@@ -7,7 +7,7 @@ require('dotenv').config();
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tb0uxuv.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -26,6 +26,7 @@ async function run() {
 
     const menuCollection = client.db("bistroDb").collection("menu");
     const reviewCollection = client.db("bistroDb").collection("reviews");
+    const cartCollection = client.db("bistroDb").collection("carts");
 
     //Load menu all menu data from mongoDB
     app.get('/menu', async(req, res) => {
@@ -38,6 +39,36 @@ async function run() {
         const result = await reviewCollection.find().toArray();
         res.send(result);
     });
+
+
+    // Cart collection apis
+    app.get('/carts', async (req, res) => {
+      const email = req.query.email;
+
+      if (!email) {
+        res.send([]);
+      }
+      const query = { email: email };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
+    //all cart items
+    app.post('/carts', async (req, res) => {
+      const item = req.body;
+      const result = await cartCollection.insertOne(item);
+      res.send(result);
+    });
+
+    //Delete one item from the cart
+    app.delete('/carts/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartCollection.deleteOne(query);
+      res.send(result);
+    })
+
 
 
 
@@ -66,3 +97,21 @@ app.get('/' , (req , res) => {
 app.listen(port, () => {
     console.log(`Bistro Boss sitting on port ${port} `);
 })
+
+
+
+
+/**
+ * ..................................................................
+ * Naming Convention
+ * ..................................................................
+ * users : userCollection
+ * app.get('/users'); use to get all user
+ * app.get('/users/:id'); use to get particular user
+ * app.post('/users'); use to create a user
+ * app.patch('/users/:id'); use to particular id user update 
+ * app.put('/users/:id'); use to particular id user update 
+ * app.delete('/users/:id'); use to particular id user deleted 
+ * 
+ * ...................................................................
+ */
